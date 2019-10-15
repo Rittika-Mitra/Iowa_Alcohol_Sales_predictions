@@ -1,0 +1,64 @@
+
+---
+title: "Iowasalesexploration"
+author: "Rittika"
+date: "September 26, 2019"
+output: html_document
+---
+
+
+```{r Importing libraries}
+library(tidyverse)
+```
+
+```{r Importing data}
+idata = read_csv("data/brand_county_sales.csv")
+```
+```{r}
+head(idata)
+```
+```{r year month separate columns}
+yr_month <- separate(data = idata, col = month_year, into = c("year", "month"), sep = "-")
+```
+
+```{r}
+yr_month <- yr_month %>%
+  mutate(Jan = ifelse(month == '01', "1", "0")) %>%
+  mutate(Feb = ifelse(month == '02', "1", "0")) %>%
+  mutate(Mar = ifelse(month == '03', "1", "0")) %>%
+  mutate(Apr = ifelse(month == '04', "1", "0")) %>%
+  mutate(May = ifelse(month == '05', "1", "0")) %>%
+  mutate(Jun = ifelse(month == '06', "1", "0")) %>%
+  mutate(Jul = ifelse(month == '07', "1", "0")) %>%
+  mutate(Aug = ifelse(month == '08', "1", "0")) %>%
+  mutate(Sep = ifelse(month == '09', "1", "0")) %>%
+  mutate(Oct = ifelse(month == '10', "1", "0")) %>%
+  mutate(Nov = ifelse(month == '11', "1", "0")) %>%
+  mutate(Dec = ifelse(month == '12', "1", "0")) 
+```
+  
+
+```{r # Remove any observation with missing values:}
+df <- df %>% 
+  drop_na()
+
+str(df)
+```
+
+```{r Rename a Sales (dollar) in R}
+colnames(df)[colnames(df)=="Sale (Dollars)"] <- "sales"
+head(df)
+```
+```{r}
+res <- model.matrix(~month, data = df)
+head(res[, -1])
+```
+
+```{r}
+linearMod <- lm(sales ~ month, data=df)  # build linear regression model on full data
+summary(linearMod)$coef
+print(linearMod)
+```
+```{r Linear Regression Diagnostics}
+summary(linearMod)
+```

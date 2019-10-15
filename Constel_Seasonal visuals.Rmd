@@ -1,0 +1,125 @@
+---
+title: "Seasonal Forecast for Vendor Constellation Brands Inc."
+author: "Rittika"
+date: "10/12/2019"
+output: html_document
+---
+# Seasonal Forecast for Vendor Constellation Brands Inc.
+
+```{r importing-libs, message=FALSE, warning=FALSE, echo=FALSE}
+library(tidyverse)
+library(ggridges)
+library(plotly)
+```
+
+```{r import-data, message=FALSE, warning=FALSE}
+sales = read_csv("data/brand_county_sales.csv")
+```
+
+```{r remove-NAs}
+sales <- sales %>% drop_na()
+```
+
+```{r}
+sales <- sales %>% rename(saleAmt='Sale (Dollars)')
+```
+
+
+```{r year-month}
+sales_constel <- sales %>% 
+  separate(col = month_year, into = c("year", "month"), sep = "-") %>%
+  filter(vendor_name == 'constellationbrandsinc')
+```
+```{r}
+head(sales_constel)
+```
+
+```{r season, message=TRUE}
+sales_constel <- sales_constel %>%
+  mutate(season = case_when(
+    month %in% c('01','02','12') ~ 'Winter',
+    month %in% c('03','04','05') ~ 'Spring',
+    month %in% c('06','07','08') ~ 'Summer',
+    month %in% c('09','10','11') ~ 'Autumn',
+    TRUE ~ 'NA'
+  ))
+```
+
+
+```{r sale-density, message=FALSE, warning=FALSE}
+ggplot(sales_constel, aes(x=saleAmt,y=season)) +
+  geom_point(alpha=0.2, shape = '|', position = position_nudge(y=-0.05)) +
+  geom_density_ridges_gradient(quantile_lines=TRUE, scale=0.9) +
+  scale_x_continuous(limits=c(-20,70000)) +
+  theme_classic() +
+  labs(title="Number of sales in different season",x='Number of Sales',y=element_blank())
+```
+The density plot shows that the number of sales are consistent across seasons
+
+## Lets find out the Sale Amount per season
+```{r sale-volume, message=FALSE, warning=FALSE}
+sale_summary_season <- sales_constel %>%
+  group_by(year,season) %>%
+  summarize(Total_sale=sum(saleAmt)) %>%
+  ungroup()
+
+g <- sale_summary_season %>% 
+ ggplot(aes(x=reorder(season, Total_sale),y=Total_sale,fill=season)) +
+  geom_col(width = 0.3) +
+  coord_flip() +
+  theme_bw() +
+  theme(legend.position = "none") +
+  facet_wrap(~year)
+ggplotly(g) %>%
+  layout(title = "Total Sales each Season",
+         xaxis = list(title = "Total Sales (in $)"),
+         yaxis = list(title = ""))
+```
+
+```{r seasonal_sales}
+g1 <- sale_summary_season %>%
+ ggplot(aes(x=season,y=Total_sale)) +
+  geom_line(aes(color = year,group=year),size=1) +
+  theme_bw()
+ggplotly(g1)
+
+```
+
+
+```{r month-sale-count, message=FALSE, warning=FALSE}
+ggplot(sales_constel, aes(x=saleAmt,y=month)) +
+  geom_point(alpha=0.2, shape = '|', position = position_nudge(y=-0.05)) +
+  geom_density_ridges_gradient(quantile_lines=TRUE, scale=0.8) +
+  scale_x_continuous(limits=c(-20,70000)) +
+  theme_classic() +
+  labs(title="Number of sales each month",x='Number of Sales',y=element_blank())
+```
+
+
+```{r month-sale-volume}
+sale_summary_month <- sales_constel %>%
+  group_by(year,month) %>%
+  summarize(Total_sale=sum(saleAmt)) %>%
+  ungroup()
+
+g <- sale_summary_month %>%
+ ggplot(aes(x=reorder(month, Total_sale),y=Total_sale,fill=month)) +
+  geom_col() +
+  coord_flip() +
+  theme_bw() +
+  theme(legend.position = "none") +
+  facet_wrap(~year, scales = "free_x")
+ggplotly(g) %>%
+  layout(title = "Total Sale each Month",
+         xaxis = list(title = "Total Sales (in $)"),
+         yaxis = list(title = ""))
+```
+
+```{r monthly_sales}
+g2 <- sale_summary_month %>%
+ ggplot(aes(x=month,y=Total_sale)) +
+  geom_line(aes(color = year,group=year),size=1) +
+  theme_bw()
+ggplotly(g2)
+
+```
